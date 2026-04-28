@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+slack-bolt
+psycopg2-binary
+python-dotenv
+pydantic
+google-genai
+groq
+numpy
