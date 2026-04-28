@@ -18,6 +18,7 @@ def _get_cached_embedding(query: str):
     cached_embedding = cache.get_json(cache_key)
 
     if cached_embedding:
+        print("Embedding cache hit")
         return cached_embedding
 
     embedding = get_embedding(query)
@@ -56,6 +57,7 @@ def _semantic_entry_key(tenant_id: str, normalized_query: str, top_n: int) -> st
 
 def _get_semantic_retrieval_cache(tenant_id: str, query_embedding, top_n: int):
     if not settings.SEMANTIC_RETRIEVAL_CACHE_ENABLED:
+        print("Semantic retrieval cache disabled by settings")
         return None
 
     index_key = _semantic_index_key(tenant_id, top_n)
@@ -64,6 +66,10 @@ def _get_semantic_retrieval_cache(tenant_id: str, query_embedding, top_n: int):
         0,
         settings.SEMANTIC_RETRIEVAL_CACHE_MAX_CANDIDATES - 1,
     )
+
+    if not entry_keys:
+        print("Semantic retrieval cache miss: no cached retrieval entries")
+        return None
 
     best_match = None
     best_similarity = 0.0
@@ -84,6 +90,15 @@ def _get_semantic_retrieval_cache(tenant_id: str, query_embedding, top_n: int):
             f"({best_similarity:.3f}) from query: {best_match.get('query')}"
         )
         return best_match.get("chunks")
+
+    if best_match:
+        print(
+            "Semantic retrieval cache miss "
+            f"({best_similarity:.3f} < {settings.SEMANTIC_RETRIEVAL_CACHE_THRESHOLD}) "
+            f"nearest query: {best_match.get('query')}"
+        )
+    else:
+        print("Semantic retrieval cache miss: no valid cached entries")
 
     return None
 
@@ -121,6 +136,7 @@ def retrieve_context(query: str, tenant_id: str, top_n: int | None = None):
 
     cached_results = cache.get_json(cache_key)
     if cached_results is not None:
+        print("Exact retrieval cache hit")
         return cached_results
 
     semantic_results = _get_semantic_retrieval_cache(tenant_id, query_embedding, top_n)

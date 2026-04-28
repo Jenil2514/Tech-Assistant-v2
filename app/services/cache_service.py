@@ -19,9 +19,20 @@ class CacheService:
             try:
                 self.client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
                 self.client.ping()
+                print("Redis cache enabled")
             except Exception:
                 self.enabled = False
                 self.client = None
+
+        if not self.enabled:
+            if not settings.CACHE_ENABLED:
+                print("Redis cache disabled by CACHE_ENABLED=false")
+            elif not settings.REDIS_URL:
+                print("Redis cache disabled because REDIS_URL is not set")
+            elif not redis:
+                print("Redis cache disabled because redis package is not installed")
+            else:
+                print("Redis cache disabled because Redis connection failed")
 
     def make_key(self, namespace: str, *parts: Any) -> str:
         raw = json.dumps(parts, sort_keys=True, default=str)

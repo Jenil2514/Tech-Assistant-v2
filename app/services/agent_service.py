@@ -159,3 +159,8 @@ def handle_message(event, client):
         ts=ts,
         text=response,
     )
+
+
+@app_slack.event("message")
+def handle_message_events():
+    return
