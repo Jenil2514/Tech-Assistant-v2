@@ -151,6 +151,7 @@ activemq-data/
 .env
 app/.env
 app/sample.pdf
+app/file2.pdf
 .envrc
 .venv
 env/

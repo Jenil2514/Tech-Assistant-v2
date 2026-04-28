@@ -15,50 +15,97 @@ app_slack = App(
 handler = SlackRequestHandler(app_slack)
 
 
+def _query_progress_response(question: str):
+    return {
+        "response_type": "ephemeral",
+        "text": "Working on your question...",
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Working on your question*\n>{question}",
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "Searching docs - ranking matches - drafting answer",
+                    },
+                ],
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "_This usually takes a few seconds._",
+                    },
+                ],
+            },
+        ],
+    }
+
+
+def _query_final_response(answer: str):
+    answer_block_text = answer
+    if len(answer_block_text) > 2900:
+        answer_block_text = answer_block_text[:2900].rsplit(" ", 1)[0] + "\n\n_Response trimmed for Slack._"
+
+    return {
+        "response_type": "ephemeral",
+        "replace_original": True,
+        "text": answer,
+        "blocks": [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": answer_block_text,
+                },
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "Answered from retrieved company knowledge.",
+                    },
+                ],
+            },
+        ],
+    }
+
+
+def _ephemeral_message(text: str, replace_original: bool = True):
+    return {
+        "response_type": "ephemeral",
+        "replace_original": replace_original,
+        "text": text,
+    }
+
+
 def _handle_query_command(command, ack, respond):
     routed = route_slash_command(command.get("command", ""), command.get("text", ""))
 
-    ack({
-        "response_type": "ephemeral",
-        "text": "Searching documents...",
-    })
+    ack(_query_progress_response(routed.text or "No question provided"))
 
     if routed.agent != RAG_AGENT:
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": "I do not know how to handle that command yet.",
-        })
+        respond(_ephemeral_message("I do not know how to handle that command yet."))
         return
 
     if not routed.text:
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": "Please add a question after `/query`.",
-        })
+        respond(_ephemeral_message("Please add a question after `/query`."))
         return
 
     try:
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": "Generating answer...",
-        })
-
         response = answer_rag_question(routed.text)
 
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": response,
-        })
+        respond(_query_final_response(response))
     except Exception:
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": "Something went wrong while answering that question. Please try again.",
-        })
+        respond(_ephemeral_message("Something went wrong while answering that question. Please try again."))
         raise
 
 
@@ -71,18 +118,10 @@ def _handle_report_command(command, ack, respond):
     })
 
     if routed.agent != REPORT_AGENT:
-        respond({
-            "response_type": "ephemeral",
-            "replace_original": True,
-            "text": "I do not know how to handle that command yet.",
-        })
+        respond(_ephemeral_message("I do not know how to handle that command yet."))
         return
 
-    respond({
-        "response_type": "ephemeral",
-        "replace_original": True,
-        "text": "Report command received. The report agent is not implemented yet.",
-    })
+    respond(_ephemeral_message("Report command received. The report agent is not implemented yet."))
 
 
 @app_slack.command("/query")

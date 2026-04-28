@@ -1,9 +1,11 @@
 fastapi
 uvicorn
 slack-bolt
+redis
 psycopg2-binary
 python-dotenv
 pydantic
 google-genai
 groq
 numpy
+PyPDF2

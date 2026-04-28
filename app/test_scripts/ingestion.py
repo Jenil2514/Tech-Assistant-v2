@@ -11,7 +11,7 @@ from app.ingestion.service import ingest_document
 tenant_id = "11111111-1111-1111-1111-111111111111"
 document_id = "22222222-2222-2222-2222-222222222222"
 
-file_path = "sample.pdf"
+file_path = "file2.pdf"
 
 result = ingest_document(file_path, tenant_id, document_id)
 

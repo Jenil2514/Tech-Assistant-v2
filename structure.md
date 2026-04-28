@@ -107,22 +107,24 @@ Implementation priorities:
 
 Retrieval:
 
-- Configurable `top_k`.
-- Optional filters, such as document, department, team, role, source, or workspace.
-- Return similarity scores or distances for debugging and confidence handling.
-- Consider hybrid search later, combining vector similarity with keyword search.
+- Contextual RAG is implemented for new ingestions: each chunk gets LLM-written context before embedding.
+- Query retrieval returns structured chunks with source/page/chunk metadata and vector distance.
+- Retrieval uses configurable `top_n`, defaults to 20 candidates.
+- LLM reranking selects final chunks before answer generation.
+- Redis caching is wired for embeddings, retrieval results, and final answers when `REDIS_URL` is set.
+- Semantic retrieval caching is implemented for similar questions using strict embedding similarity.
 
 Prompting:
 
-- Improve system prompt for onboarding and company knowledge.
-- Require answers to be grounded in retrieved context.
-- Make the model say when context is missing or insufficient.
-- Include concise source references when metadata is available.
+- Generator uses a grounded system prompt for onboarding and company knowledge.
+- Answers are constrained to retrieved/reranked context.
+- Missing or insufficient context should produce a clear no-answer response.
+- Source references are included when metadata is available.
 
 Reranking:
 
-- Optional reranking step after initial vector retrieval.
-- Keep this behind a service boundary so it can be added without changing Slack command code.
+- LLM reranking is implemented in `app/rag/reranker.py`.
+- Reranking is behind a module boundary so it can be replaced with a dedicated rerank model later.
 
 ## Multi-Agent Direction
 
@@ -250,6 +252,10 @@ Current implementation notes:
 - `app/services/agent_service.py` registers `/query`, `/report`, and `app_mention` listeners.
 - `app/agents/router.py` contains deterministic routing for slash commands and the mention fallback.
 - `app/services/rag_service.py` contains the shared default tenant id and a reusable RAG answer helper.
+- `app/rag/contextualizer.py` creates document summaries and chunk context during ingestion.
+- `app/services/cache_service.py` uses Redis when configured and falls back to no-cache behavior when unavailable.
+- `app/db/migrations/001_contextual_rag.sql` adds contextual RAG metadata columns and retrieval indexes.
+- Similar questions can reuse cached retrieval results, but final answers remain exact-query cached only.
 
 ## Production Readiness Checklist
 
