@@ -89,19 +89,32 @@ Slack
   |-- @bot    -> fallback / smart routing
 ```
 
-## Next Goal: Command + Router System
+## Command + Router System — Achieved
 
-Planned commands:
+Planned commands and routing: implemented. The deterministic router and slash-command handlers are in place and used for `/query` and `/report` flows, plus mention fallback routing.
 
-- `/query <question>`: run the RAG knowledge query flow. Initial Bolt slash-command handler is implemented.
-- `/report <user>`: run a reporting workflow. Initial placeholder handler is implemented.
+## Next Goal: HR provisioning & integrations
 
-Implementation priorities:
+Objective: enable the agent to automate new-joiner provisioning and HR tasks by integrating with GitHub, Notion, and Google Calendar, and by creating accounts according to company records in Zoho (currently), migrating to Google Workspace in the future.
 
-1. Add proper Slack slash command setup and async handling.
-2. Build a clean router system that supports command-based routing now and AI routing later.
-3. Optimize RAG retrieval and generation.
-4. Prepare the codebase for a multi-agent system.
+High-level scope:
+
+- Connectors: GitHub, Notion, Google Calendar (read/write where appropriate), and user-directory provisioning via Zoho (future: Google Workspace).
+- Connectors: GitHub, Notion, Google Calendar (read/write where appropriate), Linear (task management, optional plugin similar to Jira), and user-directory provisioning via Zoho (future: Google Workspace).
+- Plugin model: task-management connectors (Linear/Jira/etc.) should be implemented as pluggable adapters so each client can enable or replace the task system (e.g., Linear, Jira, GitHub Issues).
+- Provisioning actions: create user accounts, add to teams/repos/pages/calendars, assign HR-provided permissions, and schedule onboarding events.
+- Authorization: ensure HR-issued scopes and an approval workflow for dangerous actions.
+- Audit & logging: record changes, who triggered them, and allow rollbacks.
+- UX decision (in progress): decide whether HR uses a web UI or Slack-driven workflow for provisioning; prototype both options before committing.
+
+Implementation priorities for this goal:
+
+1. Design connector interfaces and auth flows (OAuth/service accounts) for each target system.
+1.a Design a plugin adapter interface for task-management systems (Linear/Jira) so connectors can be plugged/unplugged per-client.
+2. Map company -> provisioning rules from Zoho (fields, groups, role mappings).
+3. Implement safe provisioning step with approval/preview and audit logs.
+4. Prototype HR UX: Slack slash-commands vs. lightweight web UI; gather feedback.
+5. End-to-end tests and dry-run mode before production provisioning.
 
 ## RAG Improvements To Add
 
@@ -147,9 +160,11 @@ Router requirements:
 ```text
 app/
   .env
+  .env.sample
   main.py
   requirements.txt
   sample.pdf
+  file2.pdf
 
   agents/
     knowledge_agent.py
@@ -164,29 +179,36 @@ app/
     connection.py
     models.py
     queries.py
-
-  ingestion/
-    loader.py
-    processor.py
-    service.py
+    migrations/
+      001_contextual_rag.sql
 
   rag/
     __init__.py
-    chunker.py
-    embedder.py
-    generator.py
-    pipeline.py
-    retriver.py
+    service.py
+    embedding/
+      embedder.py
+    ingestion/
+      __init__.py
+      chunker.py
+      contextualizer.py
+      loader.py
+      processor.py
+      service.py
+    retriver/
+      retriver.py
+      generator.py
+      reranker.py
 
   routes/
     chat.py
 
-  scripts/
+  test_scripts/
     ingestion.py
     retrival.py
 
   services/
     agent_service.py
+    cache_service.py
     rag_service.py
 ```
 
@@ -195,13 +217,14 @@ Note: current filenames include `retriver.py` and `retrival.py`. Keep imports co
 ## Important Existing Paths
 
 - FastAPI app entry: `app/main.py`
-- RAG pipeline: `app/rag/pipeline.py`
-- Query embedding: `app/rag/embedder.py`
-- Retrieval: `app/rag/retriver.py`
-- LLM generation: `app/rag/generator.py`
+- RAG service: `app/rag/service.py`
+- Query embedding: `app/rag/embedding/embedder.py`
+- Retrieval: `app/rag/retriver/retriver.py`
+- Reranker: `app/rag/retriver/reranker.py`
+- LLM generation: `app/rag/retriver/generator.py`
 - Database connection: `app/db/connection.py`
 - Database queries: `app/db/queries.py`
-- Ingestion service: `app/ingestion/service.py`
+- Ingestion service: `app/rag/ingestion/service.py`
 - Agent router: `app/agents/router.py`
 - Agent service: `app/services/agent_service.py`
 - RAG service: `app/services/rag_service.py`
