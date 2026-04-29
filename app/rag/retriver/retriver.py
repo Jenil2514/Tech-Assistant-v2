@@ -4,7 +4,7 @@ import time
 from app.config.settings import settings
 from app.db.connection import get_db
 from app.db.queries import search_chunks
-from app.rag.embedder import get_embedding
+from app.rag.embedding.embedder import get_embedding
 from app.services.cache_service import cache
 
 
@@ -128,16 +128,22 @@ def _set_semantic_retrieval_cache(tenant_id: str, normalized_query: str, query_e
 def retrieve_context(query: str, tenant_id: str, top_n: int | None = None):
     top_n = top_n or settings.RAG_RETRIEVAL_TOP_N
     normalized_query = _normalize_query(query)
-    cache_key = cache.make_key("retrieval", tenant_id, normalized_query, top_n, settings.RAG_DOCUMENT_VERSION)
-
-    print("Generating query embedding...")
-    query_embedding = _get_cached_embedding(query)
-    query_embedding_vector = query_embedding
+    cache_key = cache.make_key(
+        "retrieval",
+        tenant_id,
+        normalized_query,
+        top_n,
+        settings.RAG_DOCUMENT_VERSION,
+    )
 
     cached_results = cache.get_json(cache_key)
     if cached_results is not None:
         print("Exact retrieval cache hit")
         return cached_results
+
+    print("Generating query embedding...")
+    query_embedding = _get_cached_embedding(query)
+    query_embedding_vector = query_embedding
 
     semantic_results = _get_semantic_retrieval_cache(tenant_id, query_embedding, top_n)
     if semantic_results is not None:

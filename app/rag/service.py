@@ -1,7 +1,7 @@
 from app.config.settings import settings
-from app.rag.generator import generate_answer
-from app.rag.reranker import rerank_chunks
-from app.rag.retriver import retrieve_context
+from app.rag.retriver.generator import generate_answer
+from app.rag.retriver.reranker import rerank_chunks
+from app.rag.retriver.retriver import retrieve_context
 from app.services.cache_service import cache
 
 

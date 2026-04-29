@@ -3,7 +3,7 @@ from slack_bolt.adapter.fastapi import SlackRequestHandler
 
 from app.agents.router import RAG_AGENT, REPORT_AGENT, route_app_mention, route_slash_command
 from app.config.settings import settings
-from app.services.rag_service import answer_rag_question
+from app.rag.service import answer_rag_question
 
 
 app_slack = App(
@@ -51,8 +51,6 @@ def _query_progress_response(question: str):
 
 def _query_final_response(answer: str):
     answer_block_text = answer
-    if len(answer_block_text) > 2900:
-        answer_block_text = answer_block_text[:2900].rsplit(" ", 1)[0] + "\n\n_Response trimmed for Slack._"
 
     return {
         "response_type": "ephemeral",

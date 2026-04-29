@@ -3,7 +3,7 @@ import shutil
 import os
 import uuid
 
-from app.ingestion.service import ingest_document
+from app.rag.ingestion.service import ingest_document
 
 router = APIRouter()
 

@@ -1,6 +1,6 @@
-from app.rag.chunker import chunk_pages, chunk_text, clean_text
-from app.rag.contextualizer import contextualize_chunk, summarize_document
-from app.rag.embedder import get_embedding
+from app.rag.ingestion.chunker import chunk_pages, chunk_text, clean_text
+from app.rag.ingestion.contextualizer import contextualize_chunk, summarize_document
+from app.rag.embedding.embedder import get_embedding
 
 
 def process_text(text):

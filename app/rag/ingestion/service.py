@@ -1,7 +1,7 @@
 from app.db.connection import get_db
 from app.db.queries import insert_chunk
-from app.ingestion.loader import load_pdf_pages
-from app.ingestion.processor import process_pages
+from .loader import load_pdf_pages
+from .processor import process_pages
 
 
 def ingest_document(file_path, tenant_id, document_id):
