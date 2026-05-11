@@ -55,6 +55,35 @@ Current behavior:
 - if the router does not map the command to the report agent, an unknown-command response is returned
 - otherwise the command ends with a placeholder message that the report agent is not implemented yet
 
+### `/onboard`
+
+This command starts the HR onboarding workflow.
+
+Expected format:
+
+```text
+/onboard "Full Name" email@example.com backend-engineer
+```
+
+Current behavior:
+
+1. The command payload is routed through `route_slash_command()`.
+2. The handler parses the quoted name, email, and role key.
+3. Invalid format, invalid email, or unknown role returns an ephemeral error.
+4. A pending provisioning request is saved under `runtime/provisioning_requests/`.
+5. The bot returns an ephemeral approval preview with employee summary, role mapping, planned CSV write, planned Linear invite, and planned Linear issue tree.
+6. Configured approvers can click Approve or Reject.
+7. On approval, the bot immediately updates the Slack message to a working state.
+8. The workflow appends the employee CSV row, sends a Linear invite, creates one unassigned Linear parent issue plus sub-issues, writes audit events, and returns final status.
+9. On rejection, no CSV row or Linear action is performed, and a rejection audit event is written.
+
+Required Slack app setup:
+
+- slash command `/onboard` points to `POST /slack/commands`
+- Interactivity is enabled and points to `POST /slack/commands`
+
+Approvers are configured by `PROVISIONING_APPROVER_SLACK_IDS`.
+
 ## App Mention Behavior
 
 App mentions are treated as a knowledge query fallback.
@@ -112,6 +141,7 @@ The routing contract is:
 
 - `/query` -> `rag`
 - `/report` -> `report`
+- `/onboard` -> `provisioning`
 - unknown command -> `unknown`
 - app mention -> `rag`
 
@@ -122,10 +152,9 @@ Keep this contract centralized in `app/agents/router.py`.
 Known Slack-facing limitations in the current codebase:
 
 - there is no real report workflow yet
-- there is no onboarding/provisioning Slack workflow yet
 - the upload route exists outside the active FastAPI app surface
-- structured logging for Slack requests is not yet implemented
 - mention flow error handling is thinner than the slash-command flow
+- provisioning execution currently happens inside the Slack action handler and may take several seconds while Linear responds
 
 ## Recommended Slack Standards
 

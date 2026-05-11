@@ -9,8 +9,8 @@ Slack
   -> FastAPI entrypoints
   -> Slack Bolt handler
   -> Router
-  -> RAG service
-  -> Cache / Postgres / LLM providers
+  -> RAG / Provisioning services
+  -> Cache / Postgres / LLM providers / integrations
 ```
 
 The system is intentionally modular so routing, retrieval, ingestion, and future provisioning workflows can evolve independently.
@@ -26,6 +26,8 @@ The actual runtime surface today is concentrated in a few files:
 - `app/rag/ingestion/*` handles PDF ingestion, contextualization, chunking, and embedding.
 - `app/db/*` stores and searches chunks in Postgres with pgvector.
 - `app/services/cache_service.py` provides optional Redis-backed caching with graceful fallback.
+- `app/provisioning/*` handles onboarding request state, approval orchestration, CSV writes, and audit events.
+- `app/integrations/task_management/*` provides the task-management adapter boundary and Linear implementation.
 
 ## Request Flow
 
@@ -52,7 +54,31 @@ Current behavior:
 3. The handler acknowledges immediately with a progress payload.
 4. `/query` routes to the RAG system.
 5. `/report` is recognized but not implemented.
-6. Unknown commands are rejected with a short ephemeral message.
+6. `/onboard` routes to the provisioning workflow.
+7. Unknown commands are rejected with a short ephemeral message.
+
+### Provisioning
+
+The current provisioning workflow is Slack-native:
+
+```text
+/onboard
+  -> router
+  -> Slack preview and approval buttons
+  -> provisioning service
+  -> local CSV register
+  -> JSONL audit log
+  -> task-management adapter
+  -> Linear API
+```
+
+The Slack handler owns Slack interaction and message rendering. Provisioning business logic lives under `app/provisioning/`, while Linear-specific API calls live under `app/integrations/task_management/linear.py`.
+
+Provisioning currently stores prototype runtime state in:
+
+- `runtime/onboarding_employees.csv`
+- `runtime/provisioning_audit.jsonl`
+- `runtime/provisioning_requests/*.json`
 
 ### App mentions
 
@@ -78,10 +104,11 @@ Important caveat: this router is not currently included in `app/main.py`, so it 
 
 ### Router layer
 
-`app/agents/router.py` performs deterministic routing. Today it supports three outcomes:
+`app/agents/router.py` performs deterministic routing. Today it supports these outcomes:
 
 - `rag` for `/query`
 - `report` for `/report`
+- `provisioning` for `/onboard`
 - `unknown` for everything else
 
 This router returns a `RoutedRequest` object with the selected agent, normalized text, source, and command metadata. That shape is the contract future AI routing should preserve.
@@ -97,13 +124,14 @@ Responsibilities:
 - register slash command and event handlers
 - convert routed requests into user-visible Slack responses
 - call the RAG service for knowledge questions
+- call provisioning services for onboarding previews, approvals, and rejections
 
 What it should not do:
 
 - access the database directly
 - embed retrieval logic
 - duplicate routing rules
-- implement provisioning business logic
+- implement provider-specific provisioning business logic
 
 ### RAG layer
 
@@ -176,6 +204,7 @@ If the embedding model changes, the data migration strategy must be explicit.
 Current integrations:
 
 - Slack via Slack Bolt
+- Linear via the task-management adapter
 - Groq for summarization, reranking, and answer generation
 - Google GenAI for embeddings
 - PostgreSQL with pgvector
@@ -187,6 +216,7 @@ The current implementation implies the following constraints:
 
 - Slack handlers must ack quickly.
 - Long-running work should not block the Slack event loop.
+- Provisioning approval actions should show a visible working state before calling external APIs.
 - Retrieval must remain grounded in stored company context.
 - Missing context should produce an uncertainty response instead of hallucination.
 - Document versioning should be used for cache invalidation.
@@ -194,12 +224,13 @@ The current implementation implies the following constraints:
 
 ## Current Gaps and Scaffolding
 
-The following areas are present in the repository but are not yet implemented end-to-end:
+The following areas are incomplete, prototype-level, or intentionally scaffolded:
 
 - `app/agents/knowledge_agent.py` is empty.
 - `app/agents/onboarding_agent.py` is empty.
 - `app/routes/chat.py` exists but is not mounted from `app/main.py`.
 - `/report` is routed but returns a placeholder response.
-- Provisioning workflows are not yet implemented in code.
+- Provisioning uses local runtime files rather than durable database tables.
+- Provisioning currently supports Linear only; GitHub, Notion, Google Calendar, Zoho, and Google Workspace are future adapters.
 
 These gaps matter because future work should extend the current architecture instead of inventing parallel systems.

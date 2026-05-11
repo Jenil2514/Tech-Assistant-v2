@@ -29,9 +29,10 @@ The current codebase exposes these experiences:
 - `/query` for company knowledge questions.
 - `@mention` for fallback knowledge questions in-channel.
 - `/report` as a routed placeholder for future reporting workflows.
+- `/onboard` for approval-gated HR onboarding with CSV register and Linear invite/issues.
 - `/upload` as an unmounted ingestion helper in `app/routes/chat.py`.
 
-The most mature experience today is knowledge Q&A. Reporting and provisioning are roadmap items.
+The most mature experience today is knowledge Q&A. Provisioning has a first working Slack-native slice; reporting remains a placeholder.
 
 ## Product Principles
 
@@ -55,6 +56,8 @@ Slash commands should be routed deterministically. If the system does not know h
 ### Safe automation
 
 Any future provisioning or HR action must be approval-gated, auditable, and revocable.
+
+The current onboarding workflow is approval-gated and audited, but rollback/revocation is not implemented yet.
 
 ### Multi-tenant by design
 
@@ -85,6 +88,7 @@ Admins need visibility, auditing, and control over dangerous actions and externa
 Current focus:
 
 - stabilize the Slack knowledge assistant path
+- stabilize the `/onboard` provisioning slice
 - keep retrieval grounded and fast
 - preserve deterministic routing
 - keep ingestion and retrieval compatible with the current 768-dimensional embeddings
@@ -100,6 +104,8 @@ Near-term product work should focus on:
 - improving Slack error handling and retry behavior
 - adding tests for routing, retrieval, and cache fallback
 - pluggable connector architecture
+- replacing local CSV/JSONL provisioning storage with durable database-backed storage
+- adding GitHub, Notion, Google Calendar, and Zoho adapters
 
 ### Later
 
@@ -110,6 +116,7 @@ Medium-term product goals:
 - background job execution for long-running work
 - per-tenant configuration and permissions
 - document access controls and tenant-aware knowledge scopes
+- Google Workspace account creation when subscription/setup is available
 
 ### Long term
 
@@ -131,6 +138,7 @@ The product is working well when:
 - long-running actions are visible and safe
 - provisioning actions cannot happen without approval and auditing
 - new integrations can be added without coupling them to Slack handlers or retrieval internals
+- HR can run `/onboard` and get a visible preview, approval, employee register row, Linear invite, and onboarding issue tree
 
 ## Non-Goals
 
@@ -148,3 +156,4 @@ The current product should not be treated as:
 - Preserve tenant isolation everywhere.
 - Never let an integration or workflow bypass approval and audit requirements.
 - Treat placeholder modules as intentional scaffolding, not finished product surface.
+- Keep task-management systems behind `TaskManagementAdapter`; do not hardcode Linear behavior into Slack handlers.

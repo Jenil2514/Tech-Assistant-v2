@@ -100,6 +100,7 @@ Never jump directly into implementation.
 Slack
   |-- /query
   |-- /report
+  |-- /onboard
   |-- @mention
         ↓
 Router Agent
@@ -234,6 +235,14 @@ Never:
 
 # Provisioning System Rules
 
+Current provisioning supports a first Slack-native `/onboard` workflow:
+- validates `/onboard "Full Name" email@example.com role-key`
+- requires configured Slack approver approval
+- writes local CSV employee register under `runtime/`
+- writes JSONL audit events under `runtime/`
+- sends Linear invite through `TaskManagementAdapter`
+- creates one unassigned Linear parent issue plus onboarding sub-issues
+
 Future provisioning systems must support:
 - GitHub
 - Notion
@@ -248,6 +257,8 @@ Future provisioning systems must support:
 - All integrations must support revocation.
 - Task systems must use pluggable adapters.
 - Connectors must remain replaceable per-client.
+- Do not assign Linear onboarding issues to invitees in v1; keep name/email in issue title and description.
+- Do not commit `runtime/` employee or audit files.
 
 ---
 
@@ -322,6 +333,8 @@ Logs should include:
 - errors
 - agent selection
 - retrieval timing
+- provisioning request id
+- adapter provider/action
 
 Never log:
 - secrets
@@ -374,6 +387,15 @@ Critical test areas:
 - app/agents/router.py
 - app/agents/knowledge_agent.py
 - app/agents/onboarding_agent.py
+
+## Provisioning
+- app/provisioning/service.py
+- app/provisioning/parser.py
+- app/provisioning/role_mappings.py
+- app/provisioning/employee_register.py
+- app/provisioning/audit.py
+- app/integrations/task_management/base.py
+- app/integrations/task_management/linear.py
 
 ## RAG
 - app/rag/service.py
