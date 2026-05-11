@@ -1,0 +1,1 @@
+"""Task-management adapter implementations."""

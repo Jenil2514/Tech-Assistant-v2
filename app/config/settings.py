@@ -2,7 +2,11 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=Path(__file__).resolve().parents[1] / ".env")
+APP_DIR = Path(__file__).resolve().parents[1]
+PROJECT_DIR = Path(__file__).resolve().parents[2]
+
+load_dotenv(dotenv_path=PROJECT_DIR / ".env")
+load_dotenv(dotenv_path=APP_DIR / ".env", override=True)
 
 class Settings:
     DB_URL = os.getenv("DATABASE_URL")
@@ -23,5 +27,15 @@ class Settings:
     SEMANTIC_RETRIEVAL_CACHE_ENABLED = os.getenv("SEMANTIC_RETRIEVAL_CACHE_ENABLED", "true").lower() == "true"
     SEMANTIC_RETRIEVAL_CACHE_THRESHOLD = float(os.getenv("SEMANTIC_RETRIEVAL_CACHE_THRESHOLD", "0.92"))
     SEMANTIC_RETRIEVAL_CACHE_MAX_CANDIDATES = int(os.getenv("SEMANTIC_RETRIEVAL_CACHE_MAX_CANDIDATES", "50"))
+    PROVISIONING_APPROVER_SLACK_IDS = os.getenv("PROVISIONING_APPROVER_SLACK_IDS", "")
+    EMPLOYEE_REGISTER_CSV_PATH = os.getenv("EMPLOYEE_REGISTER_CSV_PATH", "runtime/onboarding_employees.csv")
+    PROVISIONING_AUDIT_LOG_PATH = os.getenv("PROVISIONING_AUDIT_LOG_PATH", "runtime/provisioning_audit.jsonl")
+    PROVISIONING_STATE_DIR = os.getenv("PROVISIONING_STATE_DIR", "runtime/provisioning_requests")
+    TASK_ADAPTER = os.getenv("TASK_ADAPTER", "linear")
+    LINEAR_API_KEY = os.getenv("LINEAR_API_KEY")
+    LINEAR_TEAM_ID = os.getenv("LINEAR_TEAM_ID")
+    LINEAR_INVITE_TEAM_IDS = os.getenv("LINEAR_INVITE_TEAM_IDS", "")
+    LINEAR_ONBOARDING_LABEL_ID = os.getenv("LINEAR_ONBOARDING_LABEL_ID")
+    LINEAR_INVITE_ROLE = os.getenv("LINEAR_INVITE_ROLE", "admin")
 
 settings = Settings()

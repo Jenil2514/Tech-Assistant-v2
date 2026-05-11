@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 RAG_AGENT = "rag"
 REPORT_AGENT = "report"
+PROVISIONING_AGENT = "provisioning"
 UNKNOWN_AGENT = "unknown"
 
 
@@ -29,6 +30,14 @@ def route_slash_command(command: str, text: str) -> RoutedRequest:
     if normalized_command == "/report":
         return RoutedRequest(
             agent=REPORT_AGENT,
+            text=normalized_text,
+            source="slash_command",
+            command=normalized_command,
+        )
+
+    if normalized_command == "/onboard":
+        return RoutedRequest(
+            agent=PROVISIONING_AGENT,
             text=normalized_text,
             source="slash_command",
             command=normalized_command,
